@@ -96,7 +96,7 @@ async function fetchNotifications() {
     if (user.role !== 'Donor') return;
 
     try {
-        const response = await fetch(`http://localhost:5001/api/notifications/${user.id}`);
+        const response = await fetch(`${API_URL}/notifications/${user.id}`);
         const alerts = await response.json();
         const countEl = document.getElementById('notif-count');
         const listEl = document.getElementById('notif-list');

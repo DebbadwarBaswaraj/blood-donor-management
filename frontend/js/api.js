@@ -1,4 +1,5 @@
-const API_URL = 'http://127.0.0.1:5001/api';
+const API_BASE_URL = "https://blood-donor-management.onrender.com";
+const API_URL = `${API_BASE_URL}/api`;
 
 const api = {
     async register(userData) {

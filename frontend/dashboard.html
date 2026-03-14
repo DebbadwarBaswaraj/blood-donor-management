@@ -423,7 +423,7 @@
             }
 
             // Get Urgent Requests (from notifications endpoint)
-            const response = await fetch(`${api.baseUrl || 'http://localhost:5001/api'}/notifications/${user.id}`);
+            const response = await fetch(`${API_URL}/notifications/${user.id}`);
             const alerts = await response.json();
             const matchingContainer = document.getElementById('donorMatchingRequests');
 
