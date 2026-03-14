@@ -154,9 +154,8 @@ const api = {
     },
 
     downloadCertificate(userId) {
-        // Adding .pdf to the URL helps browsers correctly identify the file type
-        // Adding a timestamp prevents caching of old error messages
-        window.location.href = `${API_URL}/certificate/${userId}/BDMS_Certificate.pdf?t=${Date.now()}`;
+        // Use the simplified route and add a timestamp to prevent caching
+        window.location.href = `${API_URL}/certificate/${userId}?t=${Date.now()}`;
     },
 
     // Gender-aware donor dashboard data

@@ -432,7 +432,8 @@ router.get('/:userId/eligible', async (req, res) => {
 
 // ─────────────────────────────────────────────
 //  Route: GET /api/certificate/:userId (or /api/certificate/:userId/cert.pdf)
-router.get('/:userId/:filename?', async (req, res) => {
+//  Route: GET /api/certificate/:userId 
+router.get('/:userId', async (req, res) => {
     const { userId } = req.params;
     try {
         const [donorRows] = await db.execute(
