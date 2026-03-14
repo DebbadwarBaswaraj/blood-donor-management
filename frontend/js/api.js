@@ -154,9 +154,9 @@ const api = {
     },
 
     downloadCertificate(userId) {
-        // Using window.location.href is the most reliable way to trigger a native download 
-        // that respects the backend's Content-Disposition headers.
-        window.location.href = `${API_URL}/certificate/${userId}`;
+        // Adding .pdf to the URL helps browsers correctly identify the file type
+        // Adding a timestamp prevents caching of old error messages
+        window.location.href = `${API_URL}/certificate/${userId}/BDMS_Certificate.pdf?t=${Date.now()}`;
     },
 
     // Gender-aware donor dashboard data
