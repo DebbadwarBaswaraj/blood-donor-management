@@ -154,13 +154,9 @@ const api = {
     },
 
     downloadCertificate(userId) {
-        const link = document.createElement('a');
-        link.href = `${API_URL}/certificate/${userId}`;
-        link.target = '_blank';
-        // The filename is set by the backend Content-Disposition header
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // Using window.location.href is the most reliable way to trigger a native download 
+        // that respects the backend's Content-Disposition headers.
+        window.location.href = `${API_URL}/certificate/${userId}`;
     },
 
     // Gender-aware donor dashboard data

@@ -513,8 +513,9 @@ router.get('/:userId', async (req, res) => {
  
             const levelLabel = levelInfo.level.charAt(0).toUpperCase() + levelInfo.level.slice(1);
             const filename = `BDMS_${levelLabel}_Certificate_${donor.full_name.replace(/\s+/g, '_')}.pdf`;
-            res.setHeader('Content-Type', 'application/pdf');
-            res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+            
+            res.attachment(filename);
+            res.contentType('application/pdf');
             res.send(pdfBuffer);
  
         } catch (browserErr) {
