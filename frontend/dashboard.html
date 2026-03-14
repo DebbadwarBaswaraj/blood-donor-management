@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Blood Donor Management System</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="main-content">
+        <!-- Navbar will be rendered here -->
+        <div class="content-wrapper">
+            <h1 id="dashboardGreeting" style="margin-bottom: 24px;">Dashboard</h1>
+
+            <!-- Admin View -->
+            <div id="adminView" style="display: none;">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #ebf8ff; color: #3182ce;">👥</div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="totalDonors">0</div>
+                            <div class="stat-label">Total Donors</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #f0fff4; color: #38a169;">👤</div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="totalUsers">0</div>
+                            <div class="stat-label">Total Registered Users</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #faf5ff; color: #805ad5;">🏥</div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="totalHospitals">0</div>
+                            <div class="stat-label">Total Hospitals</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #fff5f5; color: #e53e3e;">⚠️</div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="totalRequests">0</div>
+                            <div class="stat-label">Emergency Requests</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-top: 24px;">
+                    <!-- Recent Requests Table & Quick Links -->
+                    <div>
+                        <div class="card" style="margin-bottom: 24px;">
+                            <div class="card-header">
+                                <h3>Emergency Requests Overview</h3>
+                                <a href="emergency.html" class="btn btn-primary"
+                                    style="padding: 6px 12px; font-size: 0.8rem;">Manage All</a>
+                            </div>
+                            <div class="responsive-table">
+                                <table id="recentRequestsTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Patient</th>
+                                            <th>Blood Group</th>
+                                            <th>City</th>
+                                            <th>Date</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Loaded via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="card" style="margin-bottom: 0;">
+                            <div class="card-header">
+                                <h3>System Operations</h3>
+                            </div>
+                            <div style="padding: 20px; display: flex; gap: 15px;">
+                                <button class="btn btn-primary" style="flex: 1;" onclick="window.location.href='donors.html'">🩸 Manage Donors</button>
+                                <button class="btn btn-primary" style="flex: 1; background: #38a169;" onclick="window.location.href='hospitals.html'">🏥 Manage Hospitals</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 24px;">
+                        <!-- Blood Group Chart -->
+                        <div class="card" style="margin-bottom: 0;">
+                            <div class="card-header">
+                                <h3>Blood Group Distribution</h3>
+                            </div>
+                            <div style="padding: 20px;">
+                                <canvas id="bloodChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- System Activity Summary -->
+                        <div class="card" style="margin-bottom: 0;">
+                            <div class="card-header">
+                                <h3>System Activity</h3>
+                            </div>
+                            <div style="padding: 20px;" id="systemActivityContainer">
+                                <p style="color: var(--text-muted)">Loading activity...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Donor View -->
+            <div id="donorView" style="display: none;">
+                <div class="stats-grid" style="grid-template-columns: repeat(4,1fr);">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #f0fff4; color: #38a169;">🏥</div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="donorStatusToggle" style="font-size: 1.4rem;">Checking...</div>
+                            <div class="stat-label">Eligibility Status</div>
+                            <div id="donorDaysLeft" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 3px;"></div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #fff5f5; color: #e53e3e;">🩸</div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="donorTotalDonations">0</div>
+                            <div class="stat-label">Total Donations</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #faf5ff; color: #805ad5;">📅</div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="donorNextDate" style="font-size: 1.2rem;">Unknown</div>
+                            <div class="stat-label">Next Available Date</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #ebf8ff; color: #3182ce;">⚧</div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="donorGender" style="font-size: 1.3rem;">-</div>
+                            <div class="stat-label">Gender</div>
+                            <div id="donorWaitRule" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 3px;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- My Achievements Section -->
+                <div id="achievementsSection" style="display:none; margin-top: 24px;">
+                    <div style="margin-bottom: 16px;">
+                        <h3 style="font-size: 1.15rem;">🏆 My Achievements</h3>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 18px;">
+                        <div id="tier-normal" style="border-radius: 12px; padding: 18px 14px; text-align: center; background: #f7f7f7; border: 2px solid #e2e8f0; opacity: 0.45; transition: 0.3s;">
+                            <div style="font-size: 2.4rem; margin-bottom: 8px;">🩸</div>
+                            <div style="font-weight: 700; font-size: 0.95rem; color: #b87333;">Appreciation</div>
+                            <div style="font-size: 0.75rem; color: #718096; margin: 4px 0;">2+ Donations</div>
+                            <div id="badge-normal" style="margin-top: 8px; font-size: 0.7rem; letter-spacing: 1px; text-transform: uppercase; color: #a0aec0;">Locked</div>
+                        </div>
+                        <div id="tier-elite" style="border-radius: 12px; padding: 18px 14px; text-align: center; background: #f7f7f7; border: 2px solid #e2e8f0; opacity: 0.45; transition: 0.3s;">
+                            <div style="font-size: 2.4rem; margin-bottom: 8px;">🥈</div>
+                            <div style="font-weight: 700; font-size: 0.95rem; color: #718096;">Elite</div>
+                            <div style="font-size: 0.75rem; color: #718096; margin: 4px 0;">4+ Donations</div>
+                            <div id="badge-elite" style="margin-top: 8px; font-size: 0.7rem; letter-spacing: 1px; text-transform: uppercase; color: #a0aec0;">Locked</div>
+                        </div>
+                        <div id="tier-gold" style="border-radius: 12px; padding: 18px 14px; text-align: center; background: #f7f7f7; border: 2px solid #e2e8f0; opacity: 0.45; transition: 0.3s;">
+                            <div style="font-size: 2.4rem; margin-bottom: 8px;">🥇</div>
+                            <div style="font-weight: 700; font-size: 0.95rem; color: #d69e2e;">Gold</div>
+                            <div style="font-size: 0.75rem; color: #718096; margin: 4px 0;">6+ Donations</div>
+                            <div id="badge-gold" style="margin-top: 8px; font-size: 0.7rem; letter-spacing: 1px; text-transform: uppercase; color: #a0aec0;">Locked</div>
+                        </div>
+                        <div id="tier-hero" style="border-radius: 12px; padding: 18px 14px; text-align: center; background: #f7f7f7; border: 2px solid #e2e8f0; opacity: 0.45; transition: 0.3s;">
+                            <div style="font-size: 2.4rem; margin-bottom: 8px;">👑</div>
+                            <div style="font-weight: 700; font-size: 0.95rem; color: #e53e3e;">Hero</div>
+                            <div style="font-size: 0.75rem; color: #718096; margin: 4px 0;">10+ Donations</div>
+                            <div id="badge-hero" style="margin-top: 8px; font-size: 0.7rem; letter-spacing: 1px; text-transform: uppercase; color: #a0aec0;">Locked</div>
+                        </div>
+                    </div>
+                    <div id="certBanner" style="display:none;">
+                        <div id="certBannerInner" style="border-radius: 12px; padding: 22px 28px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
+                            <div style="display: flex; align-items: center; gap: 18px;">
+                                <div id="certBannerIcon" style="font-size: 2.8rem; background: rgba(255,255,255,0.15); border-radius: 50%; width: 66px; height: 66px; display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255,255,255,0.3);"></div>
+                                <div>
+                                    <div id="certLevelLabel" style="font-size: 0.72rem; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 4px; font-weight: 600;"></div>
+                                    <div id="certBannerTitle" style="color: white; font-size: 1.3rem; font-weight: 700;"></div>
+                                    <div id="certSubtext" style="color: rgba(255,255,255,0.75); font-size: 0.88rem; margin-top: 3px;"></div>
+                                </div>
+                            </div>
+                            <button id="certDownloadBtn" onclick="downloadMyCert()" style="border: none; padding: 13px 26px; border-radius: 8px; font-size: 0.95rem; font-weight: 700; cursor: pointer; white-space: nowrap; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                                📜 Download Certificate
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-top: 24px;">
+                    <div>
+                        <div class="card" style="margin-bottom: 24px;">
+                            <div class="card-header">
+                                <h3>Incoming Appointment Requests</h3>
+                            </div>
+                            <div id="donorAppointments" style="padding: 20px;">
+                                <p style="color: var(--text-muted)">Loading requests...</p>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Donation History</h3>
+                            </div>
+                            <div id="donorDonationHistory" style="padding: 20px;">
+                                <p style="color: var(--text-muted)">Loading history...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 style="color: #e53e3e; margin: 0;">Urgent Matches Near You</h3>
+                        </div>
+                        <div id="donorMatchingRequests" style="padding: 20px;">
+                            <p style="color: var(--text-muted)">Loading requests...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User View -->
+            <div id="userView" style="display: none;">
+                <div class="stats-grid">
+                    <div class="stat-card" style="cursor: pointer; transition: 0.2s;" onclick="window.location.href='search.html'" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='translateY(0)'">
+                        <div class="stat-icon" style="background: #ebf8ff; color: #3182ce;">🔍</div>
+                        <div class="stat-info">
+                            <div class="stat-value" style="font-size: 1.3rem; margin-bottom: 4px;">Search Donors</div>
+                            <div class="stat-label">Find matching blood</div>
+                        </div>
+                    </div>
+                    <div class="stat-card" style="cursor: pointer; transition: 0.2s;" onclick="window.location.href='hospitals.html'" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='translateY(0)'">
+                        <div class="stat-icon" style="background: #f0fff4; color: #38a169;">🏥</div>
+                        <div class="stat-info">
+                            <div class="stat-value" style="font-size: 1.3rem; margin-bottom: 4px;">Nearby Hospitals</div>
+                            <div class="stat-label">View hospital stocks</div>
+                        </div>
+                    </div>
+                    <div class="stat-card" style="cursor: pointer; transition: 0.2s; border: 1px solid #fed7d7;" onclick="window.location.href='emergency.html'" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='translateY(0)'">
+                        <div class="stat-icon" style="background: #fff5f5; color: #e53e3e;">⚠️</div>
+                        <div class="stat-info">
+                            <div class="stat-value" style="font-size: 1.3rem; margin-bottom: 4px; color: #e53e3e;">Post Emergency</div>
+                            <div class="stat-label">Request urgent help</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>My Appointment Requests</h3>
+                        </div>
+                        <div style="padding: 20px;" id="userMyAppointments">
+                            <p style="color: var(--text-muted)">Loading your appointments...</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Recent Emergency Requests</h3>
+                        </div>
+                        <div style="padding: 20px;" id="userMyRequests">
+                            <p style="color: var(--text-muted)">Loading recent requests...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = checkAuth();
+            if (!user) return;
+
+            renderSidebar('dashboard');
+            renderNavbar();
+
+            // Set greeting based on role
+            document.getElementById('dashboardGreeting').innerHTML = `Welcome back, <span style="color: var(--primary);">${user.username}</span>!`;
+
+            try {
+                if (user.role === 'Admin') {
+                    document.getElementById('adminView').style.display = 'block';
+                    await loadAdminView();
+                } else if (user.role === 'Donor') {
+                    document.getElementById('donorView').style.display = 'block';
+                    await loadDonorView(user);
+                } else {
+                    document.getElementById('userView').style.display = 'block';
+                    await loadUserView();
+                }
+            } catch (err) {
+                console.error('Failed to load dashboard data:', err);
+            }
+        });
+
+        async function loadAdminView() {
+            // Fetch Stats
+            const stats = await api.getStats();
+            document.getElementById('totalDonors').innerText = stats.totalDonors;
+            document.getElementById('totalUsers').innerText = stats.totalUsers;
+            document.getElementById('totalHospitals').innerText = stats.totalHospitals;
+            document.getElementById('totalRequests').innerText = stats.totalRequests;
+
+            // Render System Activity Overview
+            document.getElementById('systemActivityContainer').innerHTML = `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 12px; padding: 8px 0; border-bottom: 1px dashed #e2e8f0;">
+                    <span style="font-weight: 500;">Lifetime Appointments Logged</span>
+                    <strong style="color: #3182ce;">${stats.totalAppointments}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 12px; padding: 8px 0; border-bottom: 1px dashed #e2e8f0;">
+                    <span style="font-weight: 500;">Emergency Requests Logged</span>
+                    <strong style="color: #e53e3e;">${stats.totalRequests}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #e2e8f0;">
+                    <span style="font-weight: 500;">Hospital Infrastructure Count</span>
+                    <strong style="color: #38a169;">${stats.totalHospitals}</strong>
+                </div>
+                <p style="margin-top: 20px; font-size: 0.8rem; color: var(--text-muted); text-align: center;">All systems tracking functionally.</p>
+            `;
+
+            // Initialize Chart
+            const ctx = document.getElementById('bloodChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: stats.bloodGroupDistribution.map(d => d.blood_group),
+                    datasets: [{
+                        data: stats.bloodGroupDistribution.map(d => d.count),
+                        backgroundColor: [
+                            '#e53e3e', '#3182ce', '#38a169', '#d69e2e',
+                            '#805ad5', '#319795', '#718096', '#dd6b20'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+
+            // Fetch Recent Requests
+            const requests = await api.getRequests();
+            const tableBody = document.querySelector('#recentRequestsTable tbody');
+            requests.slice(0, 5).forEach(req => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="font-weight: 600;">${req.patient_name}</td>
+                    <td style="font-weight: 800; color: var(--primary);">${req.blood_group_needed}</td>
+                    <td>${req.city}</td>
+                    <td>${new Date(req.required_date).toLocaleDateString()}</td>
+                    <td><span class="badge ${req.status === 'Pending' ? 'badge-danger' : 'badge-success'}">${req.status}</span></td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        async function loadDonorView(user) {
+            const statusEl    = document.getElementById('donorStatusToggle');
+            const dateEl      = document.getElementById('donorNextDate');
+            const daysLeftEl  = document.getElementById('donorDaysLeft');
+            const genderEl    = document.getElementById('donorGender');
+            const waitRuleEl  = document.getElementById('donorWaitRule');
+            const totalDonEl  = document.getElementById('donorTotalDonations');
+
+            // ── Fetch gender-aware dashboard data ──────────────────────
+            try {
+                const dash = await api.getDonorDashboard(user.id);
+
+                if (dash.error) {
+                    statusEl.innerHTML = '<span style="color:#718096">Profile Not Set Up</span>';
+                } else {
+                    // Eligibility card
+                    if (dash.eligibility_status === 'Eligible') {
+                        statusEl.innerHTML = `<span style="color:#38a169;">✔ Eligible to Donate</span>`;
+                        dateEl.innerHTML = '<span style="color:#38a169; font-weight:700;">Available Now</span>';
+                    } else {
+                        statusEl.innerHTML = `<span style="color:#e53e3e;">✖ Not Eligible</span>`;
+                        dateEl.innerHTML = `<span style="color:#e53e3e;">${dash.next_available_date}</span>`;
+                    }
+
+                    // Donation count
+                    totalDonEl.innerText = dash.donation_count;
+
+                    // Gender card
+                    const genderIcon = (dash.gender || '').toLowerCase() === 'female' ? '♀' : '♂';
+                    genderEl.innerHTML = `${genderIcon} ${dash.gender}`;
+                    waitRuleEl.textContent = `Wait period: ${genderIcon === '♀' ? '90' : '60'} days`;
+                }
+            } catch (err) {
+                statusEl.innerHTML = '<span style="color:#718096">Could Not Load</span>';
+                console.error('Donor dashboard error:', err);
+            }
+
+            // Get Donation History
+            const historyContainer = document.getElementById('donorDonationHistory');
+            try {
+                const history = await api.getHistory(user.id);
+                // Note: donation count is already set from getDonorDashboard() above
+                if (history.length > 0) {
+                    historyContainer.innerHTML = history.slice(0, 3).map(h => `
+                        <div class="history-item">
+                            <div class="history-info">
+                                <div class="hospital">${h.hospital}</div>
+                                <div class="date">${new Date(h.donation_date).toLocaleDateString()}</div>
+                            </div>
+                            <span class="badge badge-success">Completed</span>
+                        </div>
+                    `).join('');
+                } else {
+                    historyContainer.innerHTML = '<p style="color: var(--text-muted)">No donations recorded yet.</p>';
+                }
+            } catch (err) {
+                historyContainer.innerHTML = '<p style="color: red;">Failed to load history.</p>';
+            }
+
+            // Get Urgent Requests (from notifications endpoint)
+            const response = await fetch(`${api.baseUrl || 'http://localhost:5001/api'}/notifications/${user.id}`);
+            const alerts = await response.json();
+            const matchingContainer = document.getElementById('donorMatchingRequests');
+
+            if (alerts.length > 0) {
+                matchingContainer.innerHTML = alerts.slice(0, 3).map(alert => `
+                    <div style="padding: 12px; background: #fff5f5; border: 1px solid #fed7d7; border-radius: 6px; margin-bottom: 10px;">
+                        <strong style="color: #c53030">${alert.blood_group_needed} Needed</strong><br>
+                        <span style="font-size: 0.85rem;">at ${alert.hospital_name}, ${alert.city}</span>
+                        <div style="font-size: 0.8rem; margin-top: 8px; font-weight: 600;">Contact: ${alert.contact_number}</div>
+                    </div>
+                `).join('');
+            } else {
+                matchingContainer.innerHTML = `<p style="color: var(--text-muted)">No urgent requests match your blood type in the last 7 days.</p>`;
+            }
+
+            // Load Donor Appointments
+            await loadDonorAppointments(user.id);
+
+            // Achievements + Certificate Section
+            try {
+                const certCheck = await api.checkCertificateEligibility(user.id);
+                const section = document.getElementById('achievementsSection');
+                section.style.display = 'block';
+
+                const total = certCheck.totalDonations;
+
+                // Tier styling config
+                const tiers = [
+                    { id: 'normal', min: 2,  label: 'Appreciation', color: '#b87333', bg: '#fff7ee', border: '#cd7f32' },
+                    { id: 'elite',  min: 4,  label: 'Elite',         color: '#718096', bg: '#f4f4f5', border: '#c0c0c0' },
+                    { id: 'gold',   min: 6,  label: 'Gold',          color: '#b7791f', bg: '#fffbeb', border: '#f0c040' },
+                    { id: 'hero',   min: 10, label: 'Hero',          color: '#c53030', bg: '#fff5f5', border: '#e53e3e' }
+                ];
+
+                // Unlock earned tiers
+                tiers.forEach(t => {
+                    if (total >= t.min) {
+                        const card = document.getElementById(`tier-${t.id}`);
+                        const badge = document.getElementById(`badge-${t.id}`);
+                        card.style.opacity = '1';
+                        card.style.background = t.bg;
+                        card.style.border = `2px solid ${t.border}`;
+                        card.style.boxShadow = `0 4px 12px rgba(0,0,0,0.08)`;
+                        badge.textContent = '✓ Unlocked';
+                        badge.style.color = t.color;
+                        badge.style.fontWeight = '700';
+                    }
+                });
+
+                // Show download banner for highest earned level
+                if (certCheck.eligible && certCheck.level) {
+                    const lvl = certCheck.level.level;
+                    const banner = document.getElementById('certBanner');
+                    const bannerInner = document.getElementById('certBannerInner');
+                    const icon = document.getElementById('certBannerIcon');
+                    const levelLabel = document.getElementById('certLevelLabel');
+                    const titleEl = document.getElementById('certBannerTitle');
+                    const subtext = document.getElementById('certSubtext');
+                    const btn = document.getElementById('certDownloadBtn');
+
+                    const levelStyles = {
+                        normal: { bg: 'linear-gradient(135deg,#8b0000,#c0392b,#7b241c)', accent: '#f0c040', icon: '🩸',  btnBg: 'linear-gradient(135deg,#cd7f32,#f0c040)', btnColor: '#5a3e00', label: '● Appreciation Award' },
+                        elite:  { bg: 'linear-gradient(135deg,#1c1c2e,#6b0000,#1c1c2e)', accent: '#c0c0c0',  icon: '🥈',  btnBg: 'linear-gradient(135deg,#c0c0c0,#e8e8e8)', btnColor: '#1a1a1a', label: '★ Elite Donor Award' },
+                        gold:   { bg: 'linear-gradient(135deg,#7a0000,#78350f,#451a03)', accent: '#ffd700',  icon: '🥇',  btnBg: 'linear-gradient(135deg,#d4af37,#ffd700)', btnColor: '#5a3e00', label: '✦ Gold Donor Award' },
+                        hero:   { bg: 'linear-gradient(135deg,#0d0d0d,#4a0404,#0d0d0d)', accent: '#ffd700',  icon: '👑',  btnBg: 'linear-gradient(135deg,#ffd700,#ff8c00)', btnColor: '#1a0000', label: '♛ Blood Donation Hero' }
+                    };
+
+                    const s = levelStyles[lvl] || levelStyles.normal;
+                    bannerInner.style.background = s.bg;
+                    icon.textContent = s.icon;
+                    levelLabel.textContent = s.label;
+                    levelLabel.style.color = s.accent;
+                    titleEl.textContent = certCheck.level.label;
+                    subtext.textContent = `You've donated ${total} time${total > 1 ? 's' : ''} — your ${lvl} certificate is ready!`;
+                    btn.style.background = s.btnBg;
+                    btn.style.color = s.btnColor;
+                    btn.style.boxShadow = `0 4px 12px rgba(0,0,0,0.3)`;
+
+                    banner.style.display = 'block';
+                }
+            } catch (e) {
+                console.warn('Achievement check failed:', e);
+            }
+        }
+
+        async function loadUserView() {
+            document.querySelector('#userView h3').innerText = "Recent Emergency Requests";
+            const requests = await api.getRequests();
+            const myReqContainer = document.getElementById('userMyRequests');
+
+            if (requests.length > 0) {
+                myReqContainer.innerHTML = requests.slice(0, 4).map(req => `
+                    <div style="padding: 12px; border-bottom: 1px solid #edf2f7; display: flex; justify-content: space-between;">
+                        <div>
+                            <strong>${req.patient_name}</strong> needs <span style="color: var(--primary); font-weight: bold;">${req.blood_group_needed}</span>
+                            <div style="font-size: 0.8rem; color: var(--text-muted);">${req.hospital_name}, ${req.city}</div>
+                        </div>
+                        <div>
+                            <span class="badge ${req.status === 'Pending' ? 'badge-danger' : 'badge-success'}">${req.status}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                myReqContainer.innerHTML = `<p style="color: var(--text-muted)">No active emergency requests right now.</p>`;
+            }
+
+            // Load User Appointments directly
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (user && user.id) {
+                await loadRequesterAppointments(user.id);
+            }
+        }
+
+        async function loadDonorAppointments(userId) {
+            const container = document.getElementById('donorAppointments');
+            try {
+                const appointments = await api.getDonorAppointments(userId);
+                if (appointments.length === 0) {
+                    container.innerHTML = '<p style="color: var(--text-muted)">No appointment requests found.</p>';
+                    return;
+                }
+                container.innerHTML = appointments.map(app => `
+                    <div style="padding: 15px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px; background: white;">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div>
+                                <strong style="font-size: 1.1rem;">${app.requester_name}</strong>
+                                <div style="color: var(--text-muted); font-size: 0.9rem;">Requested for: ${new Date(app.appointment_date).toLocaleDateString()} at ${app.appointment_time || 'TBD'}</div>
+                                <div style="margin-top: 8px;"><strong>Location:</strong> ${app.hospital_name}</div>
+                                ${app.message ? `<div style="margin-top: 4px; font-style: italic; font-size: 0.85rem;">"${app.message}"</div>` : ''}
+                            </div>
+                            <span class="badge ${getStatusBadgeClass(app.status)}">${app.status}</span>
+                        </div>
+                        ${app.status === 'Pending' ? `
+                            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                                <button onclick="updateAppStatus(${app.id}, 'Accepted')" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.85rem; background: #38a169;">Accept</button>
+                                <button onclick="updateAppStatus(${app.id}, 'Declined')" class="btn" style="padding: 8px 16px; font-size: 0.85rem; background: #e53e3e; color: white;">Decline</button>
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('');
+            } catch (err) {
+                container.innerHTML = '<p style="color: red;">Error loading appointments.</p>';
+            }
+        }
+
+        async function loadRequesterAppointments(userId) {
+            const container = document.getElementById('userMyAppointments');
+            try {
+                const appointments = await api.getRequesterAppointments(userId);
+                if (appointments.length === 0) {
+                    container.innerHTML = '<p style="color: var(--text-muted)">No bookings yet.</p>';
+                    return;
+                }
+                container.innerHTML = appointments.map(app => `
+                    <div style="padding: 12px; border-bottom: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>${app.donor_name}</strong> (${app.blood_group})
+                            <div style="font-size: 0.8rem; color: var(--text-muted);">${new Date(app.appointment_date).toLocaleDateString()} @ ${app.hospital_name}</div>
+                        </div>
+                        <span class="badge ${getStatusBadgeClass(app.status)}">${app.status}</span>
+                    </div>
+                `).join('');
+            } catch (err) {
+                container.innerHTML = '<p style="color: red;">Error loading appointments.</p>';
+            }
+        }
+
+        function getStatusBadgeClass(status) {
+            switch (status) {
+                case 'Pending': return 'badge-warning';
+                case 'Accepted': return 'badge-success';
+                case 'Declined': return 'badge-danger';
+                case 'Completed': return 'badge-info';
+                case 'Cancelled': return 'badge-muted';
+                default: return 'badge-muted';
+            }
+        }
+
+        async function updateAppStatus(id, status) {
+            try {
+                await api.updateAppointmentStatus(id, status);
+                window.location.reload();
+            } catch (err) {
+                alert('Failed to update status');
+            }
+        }
+
+        function downloadMyCert() {
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (!user) return;
+            const btn = document.getElementById('certDownloadBtn');
+            btn.textContent = '⏳ Generating...';
+            btn.disabled = true;
+            api.downloadCertificate(user.id);
+            // Re-enable after a moment
+            setTimeout(() => {
+                btn.innerHTML = '📜 Download Certificate';
+                btn.disabled = false;
+            }, 4000);
+        }
+
+        // Code cleaned up.
+    </script>
+</body>
+
+</html>

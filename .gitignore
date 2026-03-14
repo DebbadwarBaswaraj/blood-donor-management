@@ -1,0 +1,12 @@
+node_modules/
+.env
+*.log
+*.txt
+*.json
+!package.json
+!package-lock.json
+check_cols.js
+find_female.js
+debug_db*.js
+test_*.js
+init_*.js

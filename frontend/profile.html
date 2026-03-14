@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - Blood Donor Management System</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+
+<body>
+    <div class="main-content">
+        <div class="content-wrapper">
+            <h1>User Profile</h1>
+            <div class="card" style="padding: 32px; max-width: 600px; margin-top: 24px;">
+                <div style="display: flex; align-items: center; gap: 24px; margin-bottom: 32px;">
+                    <div id="profileInitial"
+                        style="width: 80px; height: 80px; border-radius: 50%; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; color: var(--primary);">
+                        U
+                    </div>
+                    <div>
+                        <h2 id="profileUsername">Username</h2>
+                        <p id="profileRole" style="color: var(--text-muted)">Role: User</p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="text" id="profileEmail" class="form-control" readonly>
+                </div>
+
+                <div id="donorOnlyInfo" class="hidden">
+                    <!-- Badges Section -->
+                    <div class="card" style="padding: 20px; border: 1px solid #e2e8f0; box-shadow: none; margin-bottom: 20px; background: linear-gradient(to right, #fff5f5, #ffffff);">
+                        <h3 style="margin-top: 0; display: flex; align-items: center; gap: 8px;">🎖️ Your Achievements</h3>
+                        <div id="badgesContainer" class="badge-container">
+                            <p style="color: var(--text-muted); font-size: 0.85rem;">Complete your first donation to earn badges!</p>
+                        </div>
+                    </div>
+
+                    <div
+                        style="background: #f0fff4; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #c6f6d5; display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <h4 style="margin: 0; color: #276749;">Donation Eligibility</h4>
+                            <p id="eligibilityText" style="margin: 5px 0 0 0; font-size: 0.85rem; color: #2f855a;">
+                                Checking status...</p>
+                        </div>
+                        <div id="eligibilityBadge" class="badge badge-success"
+                            style="font-size: 0.9rem; padding: 6px 12px;">Ready</div>
+                    </div>
+
+                    <div class="card"
+                        style="padding: 20px; border: 1px solid #e2e8f0; box-shadow: none; margin-bottom: 20px;">
+                        <h3 style="margin-top: 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">Donation History</h3>
+                        <div id="historyList" style="margin-top: 10px;">
+                            <p style="color: var(--text-muted); font-size: 0.85rem; padding: 10px;">No donation records found yet.</p>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; background: #f8fafc; padding: 15px; border-radius: 8px;">
+                            <div>
+                                <label style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Last Donation</label>
+                                <div id="profLastDonation" style="font-weight: bold; margin-top: 4px;">--</div>
+                            </div>
+                            <div>
+                                <label style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Next Available</label>
+                                <div id="profNextAvailable" style="font-weight: bold; margin-top: 4px;">--</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card" style="padding: 20px; border: 1px solid #e2e8f0; box-shadow: none;">
+                        <h3 style="margin-top: 0; color: #3182ce;">Record New Donation</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">
+                            Help us keep your records up to date! After donating, please enter the details below.
+                        </p>
+                        <div id="donationStatusMessage"
+                            style="display: none; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 0.85rem;">
+                        </div>
+                        <form id="donationForm">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div class="form-group">
+                                    <label>Date of Donation</label>
+                                    <input type="date" id="newDonationDate" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Units Donated</label>
+                                    <input type="number" id="unitsDonated" class="form-control" value="1" min="1" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Hospital/Location Name</label>
+                                <input type="text" id="hospitalName" class="form-control" placeholder="E.g. City General Hospital" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width: 100%;">I Donated Blood</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="editProfileMessage"
+                    style="display: none; color: #c53030; background: #fff5f5; border: 1px solid #fed7d7; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 0.85rem;">
+                    Full profile editing functionality is coming soon!
+                </div>
+                <button type="button" class="btn btn-primary"
+                    onclick="document.getElementById('editProfileMessage').style.display = 'block'; setTimeout(() => document.getElementById('editProfileMessage').style.display = 'none', 3000);">Edit
+                    Profile</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="js/api.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = checkAuth();
+            if (!user) return;
+            renderSidebar('profile');
+            renderNavbar();
+
+            document.getElementById('profileUsername').textContent = user.username;
+            document.getElementById('profileEmail').value = user.email;
+            document.getElementById('profileRole').textContent = 'Role: ' + user.role;
+            document.getElementById('profileInitial').textContent = user.username.charAt(0).toUpperCase();
+
+            if (user.role === 'Donor') {
+                document.getElementById('donorOnlyInfo').classList.remove('hidden');
+
+                // Fetch Donor Data and History
+                async function loadDonorProfile() {
+                    try {
+                        const [donors, historyData] = await Promise.all([
+                            api.getDonors(),
+                            api.getHistory(user.id)
+                        ]);
+
+                        const myDonorInfo = donors.find(d => String(d.user_id) === String(user.id));
+                        if (myDonorInfo) {
+                            const eligibility = calculateEligibility(myDonorInfo.last_donation_date, myDonorInfo.next_available_date);
+                            const badge = document.getElementById('eligibilityBadge');
+                            const text = document.getElementById('eligibilityText');
+
+                            document.getElementById('profLastDonation').textContent = myDonorInfo.last_donation_date ? new Date(myDonorInfo.last_donation_date).toLocaleDateString() : 'Never';
+                            document.getElementById('profNextAvailable').textContent = myDonorInfo.next_available_date ? new Date(myDonorInfo.next_available_date).toLocaleDateString() : 'Now';
+
+                            if (eligibility.eligible && myDonorInfo.availability === 'Available') {
+                                badge.className = 'badge badge-success';
+                                badge.textContent = 'Eligible';
+                                text.textContent = 'You are currently eligible to donate blood.';
+                            } else {
+                                badge.className = 'badge badge-danger';
+                                badge.textContent = 'Not Eligible';
+                                let msg = eligibility.daysLeft > 0 ? `Please wait ${eligibility.daysLeft} more days.` : "You are currently marked as Not Available.";
+                                text.textContent = msg;
+                            }
+                        }
+
+                        // Render History
+                        const historyList = document.getElementById('historyList');
+                        if (historyData.history && historyData.history.length > 0) {
+                            historyList.innerHTML = historyData.history.map(item => `
+                                <div class="history-item">
+                                    <div class="history-info">
+                                        <div class="hospital">${item.hospital_name}</div>
+                                        <div class="date">${new Date(item.donation_date).toLocaleDateString()} • ${item.units_donated} Unit(s)</div>
+                                    </div>
+                                    <div class="badge badge-success">Verified</div>
+                                </div>
+                            `).join('');
+                        }
+
+                        // Render Badges
+                        const badgesContainer = document.getElementById('badgesContainer');
+                        if (historyData.badges && historyData.badges.length > 0) {
+                            badgesContainer.innerHTML = historyData.badges.map(b => `
+                                <div class="achievement-badge" title="${b.desc}">
+                                    <div class="icon">${b.icon}</div>
+                                    <div class="name">${b.name}</div>
+                                </div>
+                            `).join('');
+                        }
+
+                    } catch (err) {
+                        console.error('Failed to load profile data:', err);
+                    }
+                }
+
+                loadDonorProfile();
+
+                // Handle Form Submit
+                document.getElementById('donationForm').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const date = document.getElementById('newDonationDate').value;
+                    const hospital = document.getElementById('hospitalName').value;
+                    const units = document.getElementById('unitsDonated').value;
+                    const statusMsg = document.getElementById('donationStatusMessage');
+
+                    try {
+                        const res = await api.recordDonation(user.id, date, {
+                            hospitalName: hospital,
+                            units: parseInt(units)
+                        });
+
+                        if (res.error) {
+                            statusMsg.style.display = 'block';
+                            statusMsg.style.backgroundColor = '#fff5f5';
+                            statusMsg.style.color = '#c53030';
+                            statusMsg.textContent = res.error;
+                        } else {
+                            statusMsg.style.display = 'block';
+                            statusMsg.style.backgroundColor = '#f0fff4';
+                            statusMsg.style.color = '#276749';
+                            statusMsg.textContent = `Donation recorded! You earned progress toward your next badge. Refreshing...`;
+
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 2000);
+                        }
+                    } catch (err) {
+                        statusMsg.style.display = 'block';
+                        statusMsg.style.backgroundColor = '#fff5f5';
+                        statusMsg.style.color = '#c53030';
+                        statusMsg.textContent = 'Error recording donation. Please check your connection.';
+                    }
+                });
+                loadDonorProfile().then(() => {
+                    // Pre-fill if coming from emergency request
+                    const params = new URLSearchParams(window.location.search);
+                    if (params.has('hospital')) {
+                        document.getElementById('hospitalName').value = params.get('hospital');
+                        if (params.has('units')) document.getElementById('unitsDonated').value = params.get('units');
+                        document.getElementById('newDonationDate').valueAsDate = new Date();
+                        
+                        // Scroll to form
+                        document.getElementById('donationForm').scrollIntoView({ behavior: 'smooth' });
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

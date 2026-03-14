@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Donors - Blood Donor Management System</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+
+<body>
+    <div class="main-content">
+        <div class="content-wrapper">
+            <h1 style="margin-bottom: 24px;">Find Blood Donors</h1>
+
+            <div class="card" style="padding: 24px; margin-bottom: 24px;">
+                <form id="searchForm"
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; align-items: end;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Blood Group</label>
+                        <select id="blood_group" class="form-control">
+                            <option value="">Any Group</option>
+                            <option value="A+">A+</option>
+                            <option value="A-">A-</option>
+                            <option value="B+">B+</option>
+                            <option value="B-">B-</option>
+                            <option value="AB+">AB+</option>
+                            <option value="AB-">AB-</option>
+                            <option value="O+">O+</option>
+                            <option value="O-">O-</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>City</label>
+                        <input type="text" id="city" class="form-control" placeholder="Enter city name">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Availability</label>
+                        <select id="availability" class="form-control">
+                            <option value="">Any Status</option>
+                            <option value="Available">Available</option>
+                            <option value="Not Available">Not Available</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Search</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>Search Results</h3>
+                </div>
+                <div class="responsive-table">
+                    <table id="searchResultsTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Blood Group</th>
+                                <th>Phone</th>
+                                <th>City</th>
+                                <th>Availability</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Results via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Modal -->
+    <div id="bookingModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
+        <div class="card" style="width: 100%; max-width: 500px; padding: 24px; position: relative;">
+            <button onclick="closeBookingModal()" style="position: absolute; right: 20px; top: 20px; border: none; background: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            <h3 id="modalTitle" style="margin-bottom: 20px;">Book Appointment</h3>
+            <form id="bookingForm">
+                <input type="hidden" id="targetDonorId">
+                <div class="form-group">
+                    <label>Hospital Name</label>
+                    <input type="text" id="bookingHospital" class="form-control" required placeholder="Where should the donor go?">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Preferred Date</label>
+                        <input type="date" id="bookingDate" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Preferred Time</label>
+                        <input type="time" id="bookingTime" class="form-control">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Message (Optional)</label>
+                    <textarea id="bookingMessage" class="form-control" rows="3" placeholder="Any special instructions..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Send Request</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!checkAuth()) return;
+            renderSidebar('search');
+            renderNavbar();
+            
+            // Set min date for booking to tomorrow
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('bookingDate').min = tomorrow.toISOString().split('T')[0];
+        });
+
+        function bookDonor(donorId, donorName) {
+            document.getElementById('targetDonorId').value = donorId;
+            document.getElementById('modalTitle').textContent = `Book Appointment with ${donorName}`;
+            document.getElementById('bookingModal').style.display = 'flex';
+        }
+
+        function closeBookingModal() {
+            document.getElementById('bookingModal').style.display = 'none';
+            document.getElementById('bookingForm').reset();
+        }
+
+        document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const user = JSON.parse(localStorage.getItem('user'));
+            const data = {
+                requester_id: user.id,
+                donor_id: document.getElementById('targetDonorId').value,
+                hospital_name: document.getElementById('bookingHospital').value,
+                appointment_date: document.getElementById('bookingDate').value,
+                appointment_time: document.getElementById('bookingTime').value,
+                message: document.getElementById('bookingMessage').value
+            };
+
+            try {
+                const res = await api.createAppointment(data);
+                if (res.error) {
+                    alert('Error: ' + res.error);
+                } else {
+                    alert(res.message);
+                    closeBookingModal();
+                    window.location.reload(); // Refresh to see changes if any
+                }
+            } catch (err) {
+                console.error('Booking Error:', err);
+                alert('Failed to send request. Check console for details.');
+            }
+        });
+
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const filters = {
+                blood_group: document.getElementById('blood_group').value,
+                city: document.getElementById('city').value,
+                availability: document.getElementById('availability').value
+            };
+
+            const tableBody = document.querySelector('#searchResultsTable tbody');
+            tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Searching...</td></tr>';
+
+            try {
+                const results = await api.searchDonors(filters);
+                const currentUser = JSON.parse(localStorage.getItem('user'));
+                tableBody.innerHTML = '';
+                if (results.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No donors found matching your criteria.</td></tr>';
+                    return;
+                }
+                results.forEach((donor, index) => {
+                    // Debug info
+                    console.log('Donor:', donor.full_name, 'User ID:', donor.user_id, 'Status:', donor.availability, 'Score:', donor.recommendationScore);
+                    console.log('Current User ID:', currentUser ? currentUser.id : 'null');
+
+                    // AI Recommendation Logic: Top 3 with a strong score get the badge
+                    const isTopRecommended = index < 3 && donor.recommendationScore >= 50;
+                    const badgeHtml = isTopRecommended 
+                        ? `<br><span class="badge badge-warning" style="background:#d69e2e; color:white; font-size:0.65rem; margin-top:4px;">⭐ Recommended Match</span>` 
+                        : '';
+
+                    // Don't show book button for self, and only show for 'User' role
+                    const isSelf = currentUser && donor.user_id && String(donor.user_id) === String(currentUser.id);
+                    const canBook = currentUser && currentUser.role === 'User';
+                    const row = document.createElement('tr');
+                    
+                    row.innerHTML = `
+                        <td>
+                            <div style="font-weight: 600;">${donor.full_name}</div>
+                            ${badgeHtml}
+                        </td>
+                        <td style="font-weight: 800; color: var(--primary);">${donor.blood_group}</td>
+                        <td>${donor.phone}</td>
+                        <td>${donor.city}</td>
+                        <td>
+                            <span class="badge ${donor.availability === 'Available' ? 'badge-success' : 'badge-danger'}">${donor.availability}</span>
+                            <div style="font-size: 0.70rem; color: var(--text-muted); margin-top: 4px;">Score: ${donor.recommendationScore || 0}</div>
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn btn-primary" style="padding: 4px 10px; font-size: 0.75rem;" onclick="openInMaps('${donor.address}', '${donor.city}', '${donor.state}')">Contact</button>
+                                ${!isSelf && canBook && donor.availability === 'Available' ? `<button class="btn" style="padding: 4px 10px; font-size: 0.75rem; background: #3182ce; color: white;" onclick="bookDonor('${donor.donor_id}', '${donor.full_name}')">Book</button>` : ''}
+                            </div>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (err) {
+                console.error(err);
+                tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: red;">Error searching donors.</td></tr>';
+            }
+        });
+
+        function openInMaps(address, city, state) {
+            const query = encodeURIComponent(`${address}, ${city}, ${state}`);
+            window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+        }
+    </script>
+</body>
+</html>

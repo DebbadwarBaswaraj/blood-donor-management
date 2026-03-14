@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergency Requests - Blood Donor Management System</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+
+<body>
+    <div class="main-content">
+        <div class="content-wrapper">
+            <h1 style="margin-bottom: 24px;">Emergency Blood Requests</h1>
+
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
+                <!-- Request Form -->
+                <div class="card" style="padding: 24px; height: fit-content;">
+                    <h3 style="margin-bottom: 20px;">Post Emergency Request</h3>
+                    <form id="requestForm">
+                        <div class="form-group">
+                            <label>Patient Name</label>
+                            <input type="text" id="patient_name" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Blood Group Needed</label>
+                            <select id="blood_group_needed" class="form-control" required>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Hospital Name</label>
+                            <input type="text" id="hospital_name" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>City</label>
+                            <input type="text" id="city" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Contact Number</label>
+                            <input type="text" id="contact_number" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Required Date</label>
+                            <input type="date" id="required_date" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Additional Message</label>
+                            <textarea id="message" class="form-control" rows="2"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Request</button>
+                    </form>
+                </div>
+
+                <!-- Requests Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Active Requests</h3>
+                    </div>
+                    <div class="responsive-table">
+                        <table id="requestsTable">
+                            <thead>
+                                <tr>
+                                    <th>Patient</th>
+                                    <th>Blood</th>
+                                    <th>City</th>
+                                    <th>Contact</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Data via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!checkAuth()) return;
+            renderSidebar('emergency');
+            renderNavbar();
+            loadRequests();
+        });
+
+        async function loadRequests() {
+            const tableBody = document.querySelector('#requestsTable tbody');
+            try {
+                const requests = await api.getRequests();
+                tableBody.innerHTML = '';
+                requests.forEach(req => {
+                    const user = JSON.parse(localStorage.getItem('user'));
+                    const isDonor = user && user.role === 'Donor';
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><strong>${req.patient_name}</strong><br><small style="color:var(--text-muted)">${req.hospital_name}</small></td>
+                        <td style="font-weight: 800; color: var(--primary);">${req.blood_group_needed}</td>
+                        <td>${req.city}</td>
+                        <td>${req.contact_number}</td>
+                        <td>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <span class="badge ${req.status === 'Urgent' ? 'badge-danger' : 'badge-warning'}">${req.status}</span>
+                                ${isDonor ? `<button onclick="helpRequest('${req.hospital_name}')" class="btn btn-primary" style="padding: 4px 8px; font-size: 0.75rem;">I Can Help</button>` : ''}
+                            </div>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (err) {
+                console.error('Failed to load requests');
+            }
+        }
+
+        function helpRequest(hospital) {
+            window.location.href = `profile.html?hospital=${encodeURIComponent(hospital)}&units=1`;
+        }
+
+        document.getElementById('requestForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const requestData = {
+                patient_name: document.getElementById('patient_name').value,
+                blood_group_needed: document.getElementById('blood_group_needed').value,
+                hospital_name: document.getElementById('hospital_name').value,
+                city: document.getElementById('city').value,
+                contact_number: document.getElementById('contact_number').value,
+                required_date: document.getElementById('required_date').value,
+                message: document.getElementById('message').value
+            };
+
+            try {
+                await api.createRequest(requestData);
+                alert('Emergency request posted successfully!');
+                document.getElementById('requestForm').reset();
+                loadRequests();
+            } catch (err) {
+                alert('Failed to post request.');
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Users Directory - Blood Donor Management System</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+
+<body>
+    <div class="main-content">
+        <div class="content-wrapper">
+            <h1 style="margin-bottom: 24px;">Users Directory</h1>
+
+            <div class="card">
+                <div class="card-header" style="flex-wrap: wrap; gap: 15px;">
+                    <h3>All Registered Users</h3>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="text" id="adminUserSearch" class="form-control" placeholder="Search by Username or City" style="min-width: 250px;">
+                        <button class="btn btn-primary" onclick="loadAdminUsers()">Search</button>
+                    </div>
+                </div>
+                <div class="responsive-table">
+                    <table id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Username / Role</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>City</th>
+                                <th>Registered On</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Loaded via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!checkAuth()) return;
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (user.role !== 'Admin') {
+                alert('Access denied. Admin only.');
+                window.location.href = 'dashboard.html';
+                return;
+            }
+            renderSidebar('users');
+            renderNavbar();
+            await loadAdminUsers();
+        });
+
+        async function loadAdminUsers() {
+            try {
+                const searchQuery = document.getElementById('adminUserSearch').value.trim();
+                const usersList = await api.getUsers(searchQuery ? { query: searchQuery } : {});
+
+                if (usersList.error) {
+                    throw new Error(usersList.error);
+                }
+
+                const tableBody = document.querySelector('#usersTable tbody');
+                tableBody.innerHTML = '';
+                
+                if (usersList.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No users found.</td></tr>';
+                    return;
+                }
+
+                usersList.forEach(u => {
+                    const row = document.createElement('tr');
+                    const registeredDate = u.created_at ? new Date(u.created_at).toLocaleDateString() : 'Unknown';
+                    const roleColor = u.role === 'Admin' ? '#e53e3e' : (u.role === 'Donor' ? '#2f855a' : '#3182ce');
+                    
+                    row.innerHTML = `
+                        <td>#${u.id}</td>
+                        <td>
+                            <div style="font-weight: 600;">${u.username}</div>
+                            <span style="font-size: 0.75rem; color: ${roleColor}; font-weight: bold;">${u.role}</span>
+                        </td>
+                        <td>${u.email}</td>
+                        <td>${u.phone || '<span style="color:var(--text-muted)">Not provided</span>'}</td>
+                        <td>${u.city || '<span style="color:var(--text-muted)">Not provided</span>'}</td>
+                        <td>${registeredDate}</td>
+                        <td>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn" style="padding: 4px 10px; font-size: 0.75rem; background: #e2e8f0; color: #1a202c;" onclick="viewUser(${u.id})">View</button>
+                                ${u.role !== 'Admin' ? `<button class="btn badge-danger" style="padding: 4px 10px; font-size: 0.75rem;" onclick="deleteUserObj(${u.id}, '${u.username}')">🗑️ Delete</button>` : ''}
+                            </div>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (err) {
+                console.error('Failed to load users:', err);
+                const tableBody = document.querySelector('#usersTable tbody');
+                tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: red;"><strong>Failed to load users:</strong> ${err.message || 'Unknown network error.'}</td></tr>`;
+            }
+        }
+
+        function viewUser(id) {
+            alert('View/Edit functionality for user ID ' + id + ' would securely open a drawer here.');
+        }
+
+        async function deleteUserObj(id, username) {
+            if (confirm(`Are you absolutely sure you want to delete the user account for "${username}"? This will erase all their related data including requests.`)) {
+                try {
+                    await api.deleteUser(id);
+                    await loadAdminUsers();
+                } catch(e) {
+                    alert('Error deleting user: ' + e.message);
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>

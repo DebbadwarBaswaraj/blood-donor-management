@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nearby Hospitals - Blood Donor Management System</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <style>
+        .blood-group-tag {
+            display: inline-block;
+            background-color: var(--primary);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            margin: 2px;
+            font-weight: 600;
+        }
+        .blood-group-tag.needed {
+            background-color: #e53e3e; /* Red for required */
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-content">
+        <div class="content-wrapper">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <h1>Nearby Hospitals</h1>
+                <!-- Admin Only Button -->
+                <button id="addHospitalBtn" class="btn btn-primary" style="display: none;" onclick="openAddHospitalModal()">+ Add Hospital</button>
+            </div>
+
+            <div class="card" style="padding: 24px; margin-bottom: 24px;">
+                <form id="searchHospitalForm"
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; align-items: end;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Target Blood Group</label>
+                        <select id="blood_group" class="form-control">
+                            <option value="">Any Group</option>
+                            <option value="A+">A+</option>
+                            <option value="A-">A-</option>
+                            <option value="B+">B+</option>
+                            <option value="B-">B-</option>
+                            <option value="AB+">AB+</option>
+                            <option value="AB-">AB-</option>
+                            <option value="O+">O+</option>
+                            <option value="O-">O-</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Hospital Name</label>
+                        <input type="text" id="hospital_name" class="form-control" placeholder="Enter hospital name">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Search Hospitals</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>Hospital Results</h3>
+                </div>
+                <div class="responsive-table">
+                    <table id="hospitalsTable">
+                        <thead>
+                            <tr>
+                                <th>Hospital Name</th>
+                                <th>City / Address</th>
+                                <th>Contact</th>
+                                <th>Available Blood Groups</th>
+                                <th>Required Blood Groups</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Results via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin/Hospital Update Modal -->
+    <div id="updateHospitalModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
+        <div class="card" style="width: 100%; max-width: 500px; padding: 24px; position: relative;">
+            <button onclick="closeUpdateModal()" style="position: absolute; right: 20px; top: 20px; border: none; background: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            <h3 id="modalTitle" style="margin-bottom: 20px;">Update Hospital Details</h3>
+            <form id="updateHospitalForm">
+                <input type="hidden" id="hospitalId">
+                <div class="form-group">
+                    <label>Available Blood Groups (comma separated)</label>
+                    <input type="text" id="updateAvailable" class="form-control" placeholder="e.g., O+, B+">
+                </div>
+                <div class="form-group">
+                    <label>Required Blood Groups (comma separated)</label>
+                    <input type="text" id="updateRequired" class="form-control" placeholder="e.g., A-, AB+">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = checkAuth();
+            if (!user) return;
+            
+            // Access control for strictly Users and Admins
+            if (user.role === 'Donor') {
+                alert('Access Denied: Donors cannot view Nearby Hospitals.');
+                window.location.href = 'dashboard.html';
+                return;
+            }
+
+            renderSidebar('hospitals');
+            renderNavbar();
+
+            if (user.role === 'Admin') {
+                document.getElementById('addHospitalBtn').style.display = 'block';
+            }
+
+            // Do not load all hospitals initially per user requirement
+            const tableBody = document.querySelector('#hospitalsTable tbody');
+            tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No hospitals found. Please search by hospital name.</td></tr>';
+        });
+
+        document.getElementById('searchHospitalForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const filters = {
+                blood_group: document.getElementById('blood_group').value,
+                hospital_name: document.getElementById('hospital_name').value
+            };
+            loadHospitals(filters);
+        });
+
+        async function loadHospitals(filters = {}) {
+            const tableBody = document.querySelector('#hospitalsTable tbody');
+            tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Loading...</td></tr>';
+
+            try {
+                const results = await api.getHospitals(filters);
+                const currentUser = JSON.parse(localStorage.getItem('user'));
+                tableBody.innerHTML = '';
+                
+                if (results.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #718096;">No hospitals found. Please search by hospital name.</td></tr>';
+                    return;
+                }
+                
+                results.forEach(hospital => {
+                    const availableTags = hospital.available_blood_groups ? hospital.available_blood_groups.split(',').map(bg => `<span class="blood-group-tag">${bg.trim()}</span>`).join('') : '<span style="color:var(--text-muted); font-size:0.8rem;">None recorded</span>';
+                    const requiredTags = hospital.required_blood_groups ? hospital.required_blood_groups.split(',').map(bg => `<span class="blood-group-tag needed">${bg.trim()}</span>`).join('') : '<span style="color:var(--text-muted); font-size:0.8rem;">None urgently needed</span>';
+
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td style="font-weight: 600;">${hospital.name}</td>
+                        <td>${hospital.city}<br><small style="color:var(--text-muted)">${hospital.address}</small></td>
+                        <td>${hospital.contact_number}</td>
+                        <td>${availableTags}</td>
+                        <td>${requiredTags}</td>
+                        <td>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn btn-primary" style="padding: 4px 10px; font-size: 0.75rem;" onclick="openInMaps('${hospital.address}', '${hospital.city}')">Map</button>
+                                ${currentUser && currentUser.role === 'Admin' ? `<button class="btn" style="padding: 4px 10px; font-size: 0.75rem; background: #ecc94b; color: #744210;" onclick="openUpdateModal(${hospital.id}, '${hospital.name}', '${hospital.available_blood_groups}', '${hospital.required_blood_groups}')">Edit</button>` : ''}
+                            </div>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (err) {
+                console.error(err);
+                tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: red;">Error loading hospitals.</td></tr>';
+            }
+        }
+
+        // Modals functionality
+        function openUpdateModal(id, name, available, required) {
+            document.getElementById('hospitalId').value = id;
+            document.getElementById('modalTitle').innerText = `Update ${name}`;
+            document.getElementById('updateAvailable').value = available || '';
+            document.getElementById('updateRequired').value = required || '';
+            document.getElementById('updateHospitalModal').style.display = 'flex';
+        }
+
+        function closeUpdateModal() {
+            document.getElementById('updateHospitalModal').style.display = 'none';
+        }
+
+        document.getElementById('updateHospitalForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('hospitalId').value;
+            const data = {
+                available_blood_groups: document.getElementById('updateAvailable').value,
+                required_blood_groups: document.getElementById('updateRequired').value
+            };
+            try {
+                await api.updateHospital(id, data);
+                closeUpdateModal();
+                loadHospitals(); // reload table
+            } catch (err) {
+                alert('Error updating hospital.');
+            }
+        });
+
+        function openInMaps(address, city) {
+            const query = encodeURIComponent(`${address}, ${city}`);
+            window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+        }
+        
+        function openAddHospitalModal() {
+            alert('Add hospital functionality is usually implemented in another dashboard for Admins, focusing on updating currently existing ones here!');
+        }
+    </script>
+</body>
+</html>
