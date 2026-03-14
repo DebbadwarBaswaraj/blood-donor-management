@@ -16,7 +16,14 @@ const certificateRoutes = require('./routes/certificate');
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: [
+    "https://blood-donor-management.vercel.app",
+    "https://blood-donor-management-6ngq.onrender.com"
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../frontend')));
 app.use('/api', authRoutes);
