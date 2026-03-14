@@ -1,4 +1,8 @@
-const API_BASE_URL = "https://blood-donor-management.onrender.com";
+// Detect if we are running locally or in production
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? '' // Use relative path if local (since frontend is served by backend)
+    : "https://blood-donor-management.onrender.com";
+
 const API_URL = `${API_BASE_URL}/api`;
 
 const api = {
