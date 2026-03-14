@@ -504,11 +504,14 @@ router.get('/:userId/:filename?', async (req, res) => {
             
             console.log('Generating PDF for:', donor.full_name);
             
-            // Wait for content with a more relaxed 'networkidle2' 
+            // Use 'domcontentloaded' for speed and reliability in slow network conditions
             await page.setContent(html, { 
-                waitUntil: 'networkidle2', 
-                timeout: 45000 
+                waitUntil: 'domcontentloaded', 
+                timeout: 30000 
             });
+
+            // Small delay to allow fonts and layout to settle
+            await new Promise(r => setTimeout(r, 2000));
 
             const pdfBuffer = await page.pdf({
                 width: '1122px', 
@@ -518,6 +521,7 @@ router.get('/:userId/:filename?', async (req, res) => {
             });
             
             await browser.close();
+            browser = null; // Mark as closed
             console.log('PDF Generated successfully, size:', pdfBuffer.length);
 
             const levelLabel = levelInfo.level.charAt(0).toUpperCase() + levelInfo.level.slice(1);
