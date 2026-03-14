@@ -502,20 +502,33 @@ router.get('/:userId', async (req, res) => {
  
             const page = await browser.newPage();
             await page.setViewport({ width: 1122, height: 794 });
-            await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
- 
+            
+            console.log('Generating PDF for:', donor.full_name);
+            
+            // Wait for content with a more relaxed 'networkidle2' 
+            await page.setContent(html, { 
+                waitUntil: 'networkidle2', 
+                timeout: 45000 
+            });
+
             const pdfBuffer = await page.pdf({
-                width: '1122px', height: '794px',
+                width: '1122px', 
+                height: '794px',
                 printBackground: true,
                 margin: { top: 0, right: 0, bottom: 0, left: 0 }
             });
+            
             await browser.close();
- 
+            console.log('PDF Generated successfully, size:', pdfBuffer.length);
+
             const levelLabel = levelInfo.level.charAt(0).toUpperCase() + levelInfo.level.slice(1);
             const filename = `BDMS_${levelLabel}_Certificate_${donor.full_name.replace(/\s+/g, '_')}.pdf`;
             
-            res.attachment(filename);
-            res.contentType('application/pdf');
+            // Explicitly set headers for maximum compatibility
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+            res.setHeader('Content-Length', pdfBuffer.length);
+            
             res.send(pdfBuffer);
  
         } catch (browserErr) {
