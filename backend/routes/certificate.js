@@ -468,28 +468,59 @@ router.get('/:userId', async (req, res) => {
         else if (levelInfo.level === 'elite')  html = buildEliteCert(donorData, today);
         else                                    html = buildNormalCert(donorData, today);
 
-        const browser = await puppeteer.launch({
-            executablePath: EDGE_PATH,
-            headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
-        });
-
-        const page = await browser.newPage();
-        await page.setViewport({ width: 1122, height: 794 });
-        await page.setContent(html, { waitUntil: 'networkidle0', timeout: 15000 });
-
-        const pdfBuffer = await page.pdf({
-            width: '1122px', height: '794px',
-            printBackground: true,
-            margin: { top: 0, right: 0, bottom: 0, left: 0 }
-        });
-        await browser.close();
-
-        const levelLabel = levelInfo.level.charAt(0).toUpperCase() + levelInfo.level.slice(1);
-        const filename = `BDMS_${levelLabel}_Certificate_${donor.full_name.replace(/\s+/g, '_')}.pdf`;
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-        res.send(pdfBuffer);
+        let browser;
+        const isProduction = process.env.NODE_ENV === 'production';
+ 
+        try {
+            if (isProduction) {
+                // Production: Use @sparticuz/chromium for Render/Linux
+                const chromium = require('@sparticuz/chromium');
+                browser = await puppeteer.launch({
+                    args: chromium.args,
+                    defaultViewport: chromium.defaultViewport,
+                    executablePath: await chromium.executablePath(),
+                    headless: chromium.headless,
+                    ignoreHTTPSErrors: true,
+                });
+            } else {
+                // Local: Find Edge or Chrome
+                const fs = require('fs');
+                const paths = [
+                    EDGE_PATH,
+                    'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
+                    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+                    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+                ];
+                let foundPath = paths.find(p => fs.existsSync(p));
+ 
+                browser = await puppeteer.launch({
+                    executablePath: foundPath || undefined,
+                    headless: true,
+                    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+                });
+            }
+ 
+            const page = await browser.newPage();
+            await page.setViewport({ width: 1122, height: 794 });
+            await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
+ 
+            const pdfBuffer = await page.pdf({
+                width: '1122px', height: '794px',
+                printBackground: true,
+                margin: { top: 0, right: 0, bottom: 0, left: 0 }
+            });
+            await browser.close();
+ 
+            const levelLabel = levelInfo.level.charAt(0).toUpperCase() + levelInfo.level.slice(1);
+            const filename = `BDMS_${levelLabel}_Certificate_${donor.full_name.replace(/\s+/g, '_')}.pdf`;
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+            res.send(pdfBuffer);
+ 
+        } catch (browserErr) {
+            if (browser) await browser.close();
+            throw browserErr;
+        }
 
     } catch (err) {
         console.error('Certificate error:', err);

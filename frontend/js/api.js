@@ -1,9 +1,13 @@
 // Detect if we are running locally or in production
-const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? '' // Use relative path if local (since frontend is served by backend)
-    : "https://blood-donor-management.onrender.com";
+const isLocal = window.location.hostname === 'localhost' || 
+                window.location.hostname === '127.0.0.1' || 
+                window.location.hostname === '::1' || 
+                window.location.port === '5001';
 
+const API_BASE_URL = isLocal ? '' : "https://blood-donor-management.onrender.com";
 const API_URL = `${API_BASE_URL}/api`;
+
+console.log('Environment:', isLocal ? 'Local' : 'Production', '| API_URL:', API_URL);
 
 const api = {
     async register(userData) {
@@ -150,8 +154,13 @@ const api = {
     },
 
     downloadCertificate(userId) {
-        // Opens the PDF download directly in a new tab / triggers browser download
-        window.open(`${API_URL}/certificate/${userId}`, '_blank');
+        const link = document.createElement('a');
+        link.href = `${API_URL}/certificate/${userId}`;
+        link.target = '_blank';
+        // The filename is set by the backend Content-Disposition header
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     },
 
     // Gender-aware donor dashboard data
