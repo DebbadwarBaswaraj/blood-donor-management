@@ -148,15 +148,46 @@ th {
     font-size: 0.9rem;
 }
 
-.nav {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 0;
+@media (max-width: 768px) {
+    .hero h1 {
+        font-size: 2rem;
+    }
+
+    .form-container {
+        margin: 20px 15px;
+        padding: 24px;
+    }
+
+    .btn {
+        width: 100%;
+        margin: 10px 0;
+    }
+
+    .nav {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .nav a {
+        margin: 0;
+    }
+
+    /* Fixed stacking for donor registration fields */
+    div[style*="grid-template-columns: 1fr 1fr"] {
+        grid-template-columns: 1fr !important;
+    }
 }
 
-.nav a {
-    color: var(--white);
-    text-decoration: none;
-    margin-left: 20px;
+@media (max-width: 480px) {
+    .hero {
+        padding: 60px 0;
+    }
+    
+    .hero p {
+        font-size: 1rem;
+    }
+
+    body {
+        font-size: 16px;
+    }
 }

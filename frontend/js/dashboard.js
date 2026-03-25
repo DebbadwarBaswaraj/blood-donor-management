@@ -45,7 +45,7 @@ function renderSidebar(activePage) {
     `;
 
     const sidebar = `
-        <div class="sidebar">
+        <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <h3>BDMS ${user.role}</h3>
             </div>
@@ -53,6 +53,7 @@ function renderSidebar(activePage) {
                 ${menuItems}
             </div>
         </div>
+        <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
     `;
     document.body.insertAdjacentHTML('afterbegin', sidebar);
 }
@@ -61,8 +62,11 @@ function renderNavbar() {
     const user = JSON.parse(localStorage.getItem('user'));
     const navbar = `
         <nav class="navbar">
-            <div class="nav-brand">
-                <h2 style="color: var(--primary);">Blood Donor Management</h2>
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <button class="hamburger" onclick="toggleSidebar()">☰</button>
+                <div class="nav-brand">
+                    <h2 style="color: var(--primary);">Blood Donor Management</h2>
+                </div>
             </div>
             <div style="display: flex; align-items: center; gap: 20px;">
                 <div id="notification-bell" style="position: relative; cursor: pointer;" onclick="toggleNotifications()">
@@ -76,11 +80,11 @@ function renderNavbar() {
                     </div>
                 </div>
                 <div class="user-profile">
-                    <div style="text-align: right">
+                    <div class="text-info" style="text-align: right">
                         <div style="font-weight: 700">${user.username}</div>
                         <div style="font-size: 0.75rem; color: var(--text-muted)">${user.role}</div>
                     </div>
-                    <div style="width: 40px; height: 40px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                    <div class="profile-img">
                         ${user.username.charAt(0).toUpperCase()}
                     </div>
                 </div>
@@ -89,6 +93,11 @@ function renderNavbar() {
     `;
     document.querySelector('.main-content').insertAdjacentHTML('afterbegin', navbar);
     fetchNotifications();
+}
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('active');
 }
 
 async function fetchNotifications() {
