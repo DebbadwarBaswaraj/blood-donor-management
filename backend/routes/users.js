@@ -6,15 +6,21 @@ const router = express.Router();
 router.get('/', async (req, res) => {
     try {
         const { query } = req.query;
-        let sql = "SELECT id, username, email, role, phone, city, created_at FROM users WHERE role = 'User'";
+        // Use a JOIN to get phone and city from the donors table if available
+        let sql = `
+            SELECT u.id, u.username, u.email, u.role, d.phone, d.city, u.created_at 
+            FROM users u 
+            LEFT JOIN donors d ON u.id = d.user_id 
+            WHERE u.role = 'User'
+        `;
         let params = [];
 
         if (query) {
-            sql += ' AND (username LIKE ? OR city LIKE ?)';
+            sql += ' AND (u.username LIKE ? OR d.city LIKE ?)';
             params.push(`%${query}%`, `%${query}%`);
         }
         
-        sql += ' ORDER BY created_at DESC';
+        sql += ' ORDER BY u.created_at DESC';
 
         const [rows] = await db.execute(sql, params);
         res.json(rows);
