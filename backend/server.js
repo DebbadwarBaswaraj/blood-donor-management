@@ -18,10 +18,8 @@ const app = express();
 
 app.use(cors({
   origin: [
-    "https://blood-donor-management.vercel.app",
-    "https://blood-donor-management-6ngq.onrender.com",
-    "http://localhost:5001",
-    "http://127.0.0.1:5001"
+    "https://blood-donor-management-eojo.vercel.app",
+    "https://blood-donor-management-6ngq.onrender.com"
   ],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
@@ -42,5 +40,5 @@ app.use('/api/certificate', certificateRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
