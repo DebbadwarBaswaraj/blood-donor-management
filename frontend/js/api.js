@@ -1,10 +1,16 @@
 // Detect if we are running locally or in production
 const isLocal = window.location.hostname === 'localhost' || 
                 window.location.hostname === '127.0.0.1' || 
-                window.location.hostname === '::1' || 
-                window.location.port === '5001';
+                window.location.hostname === '::1';
 
-const API_BASE_URL = isLocal ? '' : "https://blood-donor-management.onrender.com";
+// If we are on Render, we can use relative paths (''). 
+// If we are on Vercel, we need the specific Render backend URL.
+const renderURL = "https://blood-donor-management-6ngq.onrender.com";
+
+const API_BASE_URL = isLocal 
+    ? '' 
+    : (window.location.hostname.includes('onrender.com') ? '' : renderURL);
+
 const API_URL = `${API_BASE_URL}/api`;
 
 console.log('Environment:', isLocal ? 'Local' : 'Production', '| API_URL:', API_URL);
