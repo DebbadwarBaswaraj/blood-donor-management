@@ -18,7 +18,7 @@ const app = express();
 
 app.use(cors({
   origin: [
-    "https://blood-donor-management.vercel.app",
+    "https://blood-donor-management-eojo.vercel.app",
     "https://blood-donor-management-6ngq.onrender.com",
     "http://localhost:5001",
     "http://127.0.0.1:5001"
