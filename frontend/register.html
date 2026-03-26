@@ -156,7 +156,8 @@
                     window.location.href = 'login.html';
                 }
             } catch (err) {
-                messageDiv.textContent = 'An error occurred. Please try again.';
+                console.error('Registration Error:', err);
+                messageDiv.textContent = 'Connection Error: Could not reach the backend. Check if the backend is awake or CORS is configured correctly.';
                 messageDiv.style.color = 'red';
             }
         });

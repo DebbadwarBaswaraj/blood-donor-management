@@ -17,12 +17,23 @@ const certificateRoutes = require('./routes/certificate');
 const app = express();
 
 app.use(cors({
-  origin: [
-    "https://blood-donor-management-eojo.vercel.app",
-    "https://blood-donor-management-6ngq.onrender.com"
-  ],
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    
+    // Allow any vercel.app subdomain or local dev
+    if (origin.includes('vercel.app') || 
+        origin.includes('onrender.com') || 
+        origin.includes('localhost') || 
+        origin.includes('127.0.0.1')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true
+  credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../frontend')));
